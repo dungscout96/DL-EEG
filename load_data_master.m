@@ -22,21 +22,12 @@ subj_data = cell(1,N);
 subj_gender = zeros(1,N);
 subj_IDs = cell(1,N);
 
-% max_sample_per_subj = 85;
-% X_train = cell(1,N_train_subjs*2*max_sample_per_subj); % 2 is number of genders
-% Y_train = cell(1,N_train_subjs*2*max_sample_per_subj);
-% X_val = cell(1,N_val_subjs*2*max_sample_per_subj);
-% Y_val = cell(1,N_val_subjs*2*max_sample_per_subj);
-% X_test = cell(1,N_test_subjs*2*max_sample_per_subj);
-% Y_test = cell(1,N_test_subjs*2*max_sample_per_subj);
-% test_subjID = cell(1,N_test_subjs*2*max_sample_per_subj);
-% subjID = {};
 
 % dimension of number of sample in the data. If topo map, 4 (rgb x samples), otherwise 3
 % (chan x times x samples)
 if isTopo, sample_dim = 4; else, sample_dim = 3; end
 
-parfor iSubj=1:N
+parfor iSubj=1:N 
     if mod(iSubj,2) == 1
         % female
         EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
