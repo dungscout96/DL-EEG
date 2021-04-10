@@ -68,8 +68,8 @@ parfor iSubj=1:N
     if isSpectral
         freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
         % compute spectrum
-        srates = 100;
-        [XSpecTmp,~] = spectopo(tmpdata, winLength*1000, srates, 'plot', 'off', 'overlap', 50);
+        srates = 128;
+        [XSpecTmp,~] = spectopo(tmpdata, winLength*srates, srates, 'plot', 'off', 'overlap', 50);
         XSpecTmp(:,1) = []; % remove frequency 0
 
         % get frequency bands
