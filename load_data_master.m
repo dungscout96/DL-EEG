@@ -46,7 +46,7 @@ parfor iSubj=1:N
     end
 
     % sub-sample using window length
-    EEGeyesc = eeg_regepochs( EEGeyesc2, 'recurrence', winLength, 'limits', [0 winLength]);
+    EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
     tmpdata = EEGeyesc.data;
 
     % If numChan is 24, sub-select channel. Otherwise assuming it's 128
