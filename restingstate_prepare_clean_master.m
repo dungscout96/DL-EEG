@@ -1,13 +1,12 @@
-clear
 % Add EEGLAB path
-addpath('../eeglab');
+addpath('/expanse/projects/nemar/eeglab');
 eeglab; close;
 
 try, parpool; end
 
 % Path to data
-folderin  = '../child-mind-uncompressed';
-folderout = '../child-mind-restingstate-preprocessed';
+folderin  = '/expanse/projects/nemar/child-mind-uncompressed';
+folderout = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
 folders = dir(folderin);
 fprintf('length %f', length(folders));
 
