@@ -12,31 +12,22 @@ female = readtable('female.csv');
 female = female.Var1;
 male = readtable('male.csv');
 male = male.Var1;
-N = length(female)*2;
+%N = length(female)*2;
+N = 10;
 % choose training, validation, and test from different subjects.
 N_test_subjs = ceil(N * 0.125);
 N_val_subjs = ceil(N * 0.3125);
-N_train_subjs = length(fileNamesClosed) - N_test_subjs - N_val_subjs;
+N_train_subjs = N - N_test_subjs - N_val_subjs;
 
 subj_data = cell(1,N);
-subj_gender = zeros(1,N);
+subj_gender = cell(1,N);
 subj_IDs = cell(1,N);
-
-% max_sample_per_subj = 85;
-% X_train = cell(1,N_train_subjs*2*max_sample_per_subj); % 2 is number of genders
-% Y_train = cell(1,N_train_subjs*2*max_sample_per_subj);
-% X_val = cell(1,N_val_subjs*2*max_sample_per_subj);
-% Y_val = cell(1,N_val_subjs*2*max_sample_per_subj);
-% X_test = cell(1,N_test_subjs*2*max_sample_per_subj);
-% Y_test = cell(1,N_test_subjs*2*max_sample_per_subj);
-% test_subjID = cell(1,N_test_subjs*2*max_sample_per_subj);
-% subjID = {};
 
 % dimension of number of sample in the data. If topo map, 4 (rgb x samples), otherwise 3
 % (chan x times x samples)
 if isTopo, sample_dim = 4; else, sample_dim = 3; end
 
-parfor iSubj=1:N
+for iSubj=1:N
     if mod(iSubj,2) == 1
         % female
         EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
@@ -46,7 +37,7 @@ parfor iSubj=1:N
     end
 
     % sub-sample using window length
-    EEGeyesc = eeg_regepochs( EEGeyesc2, 'recurrence', winLength, 'limits', [0 winLength]);
+    EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
     tmpdata = EEGeyesc.data;
 
     % If numChan is 24, sub-select channel. Otherwise assuming it's 128
@@ -71,6 +62,7 @@ parfor iSubj=1:N
         end 
         tmpdata = tmpdata(chanindices,:,:);
     end
+    disp(size(tmpdata));
 
     % If compute spectral
     if isSpectral
@@ -113,32 +105,20 @@ parfor iSubj=1:N
 
     % append to XOri
     subj_data{iSubj} = tmpdata;
-    subj_gender(iSubj) = EEGeyesc.gender;
-    subj_IDs{iSubj} = string(EEGeyesc.subjID);
-%     for sample=1:size(tmpdata,sample_dim)
-%         idx = iFile*2*max_sample_per_subj+gender*max_sample_per_subj+sample;
-%         if (iFile <= N_test_subjs)
-%             X_test{idx} = tmpdata(:,:,sample);
-%             Y_test{idx} = EEGeyesc.gender;
-%             test_subjID{idx} = string(EEGeyesc.subjID);
-%         elseif (iFile <= N_test_subjs + N_val_subjs)
-%             X_val{idx} = tmpdata(:,:,sample);
-%             Y_val{idx} = EEGeyesc.gender;
-%         else
-%             X_train{idx} = tmpdata(:,:,sample);
-%             Y_train{idx} = EEGeyesc.gender;
-%         end
-%     end
+    subj_gender{iSubj} = repelem(EEGeyesc.gender, size(tmpdata,sample_dim));
+    subj_IDs{iSubj} = repelem(string(EEGeyesc.subjID), size(tmpdata,sample_dim));;
 end
 
-
+% split into train, val, test
 X_test = cat(sample_dim,subj_data{1:N_test_subjs});
-Y_test = subj_gender(1:N_test_subjs);
-test_subjID = subj_IDs(1, N_test_subjs);
+disp(size(X_test));
+Y_test = cat(2,subj_gender{1:N_test_subjs});
+disp(size(Y_test));
+test_subjID = cat(2,subj_IDs{1:N_test_subjs});
 X_val = cat(sample_dim,subj_data{N_test_subjs+1:N_test_subjs + N_val_subjs});
-Y_val = subj_gender(N_test_subjs+1:N_test_subjs + N_val_subjs);
+Y_val = cat(2,subj_gender{N_test_subjs+1:N_test_subjs + N_val_subjs});
 X_train = cat(sample_dim,subj_data{N_test_subjs + N_val_subjs + 1:end});
-Y_train = subj_gender(N_test_subjs + N_val_subjs+1:end);
+Y_train = cat(2,subj_gender{N_test_subjs + N_val_subjs + 1:end});
 
 % save
 param_text = ['_' num2str(winLength) 's'];
@@ -155,7 +135,7 @@ end
 save(['child_mind_x_train' param_text '.mat'],'X_train','-v7.3');
 save(['child_mind_y_train' param_text '.mat'],'Y_train','-v7.3');
 save(['child_mind_x_val' param_text '.mat'],'X_val','-v7.3');
-save(['child_mind_y_val' param_text '.mat]'],'Y_val','-v7.3');
+save(['child_mind_y_val' param_text '.mat'],'Y_val','-v7.3');
 save(['child_mind_x_test' param_text '.mat'],'X_test','-v7.3');
 save(['child_mind_y_test' param_text '.mat'],'Y_test','-v7.3');
 save('test_subj.mat','test_subjID','-v7.3');
