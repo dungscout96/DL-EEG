@@ -39,6 +39,7 @@ parfor iSubj=1:N
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
     tmpdata = EEGeyesc.data;
+    chanlocs = EEGeyesc.chanlocs;
 
     % If numChan is 24, sub-select channel. Otherwise assuming it's 128
     % which is the original data
@@ -61,6 +62,7 @@ parfor iSubj=1:N
         continue;
         end 
         tmpdata = tmpdata(chanindices,:,:);
+	chanlocs = EEGeyesc.chanlocs(chanindices);
     end
     disp(size(tmpdata));
 
@@ -81,9 +83,9 @@ parfor iSubj=1:N
 
         if isTopo
             % get grids
-            [~, gridTheta] = topoplot( theta, EEGeyesc.chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-            [~, gridAlpha] = topoplot( alpha, EEGeyesc.chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-            [~, gridBeta ] = topoplot( beta , EEGeyesc.chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+            [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+            [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+            [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
             gridTheta = gridTheta(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
             gridAlpha = gridAlpha(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
             gridBeta  = gridBeta( end:-1:1,:); % for proper imaging using figure; imagesc(grid);
