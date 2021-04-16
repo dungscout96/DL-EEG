@@ -30,14 +30,14 @@ subj_IDs = cell(1,N);
 if isTopo, sample_dim = 4; else, sample_dim = 3; end
 
 for iSubj=1:N 
-    EEGeyesc = pop_loadset('filepath', folderout, 'filename', fileNamesClosed(iSubj).name);
-%     if mod(iSubj,2) == 1
-%         % female
-%         EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
-%     else
-%         % male
-%         EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
-%     end
+%     EEGeyesc = pop_loadset('filepath', folderout, 'filename', fileNamesClosed(iSubj).name);
+    if mod(iSubj,2) == 1
+        % female
+        EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
+    else
+        % male
+        EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
+    end
 
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
