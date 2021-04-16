@@ -1,7 +1,7 @@
 function load_data_master(winLength, numChan, isSpectral, isTopo)
+%clear
 isTesting = false;
 if ~isTesting
-    clear
     % Add EEGLAB path
     addpath('/expanse/projects/nemar/eeglab');
     addpath('./eeglab');
@@ -26,6 +26,7 @@ if isTesting
 else
     N = length(female)*2;
 end
+disp(N);
 % choose training, validation, and test from different subjects.
 N_test_subjs = ceil(N * 0.125);
 N_val_subjs = ceil(N * 0.3125);
@@ -45,7 +46,7 @@ parfor iSubj=1:N
     else
         if mod(iSubj,2) == 1
             % female
-            EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
+            EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{floor(iSubj/2)+1} '_eyesclosed.set']);
         else
             % male
             EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);

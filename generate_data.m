@@ -1,3 +1,6 @@
-load_data_master(2,24,false,false);
+% raw data, 2-s epochs, 24 channels
+%load_data_master(2,24,false,false);
+% spectral data, 2-s epochs, 24 channels
 load_data_master(2,24,true,false);
-load_data_master(2,24,false,true);
+% topo data, 2-s epochs, 24 channels
+%load_data_master(2,24,false,true);
