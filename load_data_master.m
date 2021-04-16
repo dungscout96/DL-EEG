@@ -1,21 +1,31 @@
 function load_data_master(winLength, numChan, isSpectral, isTopo)
-% clear
-% Add EEGLAB path
-% addpath('/expanse/projects/nemar/eeglab');
-% addpath('./eeglab');
-% eeglab; close;
+isTesting = false;
+if ~isTesting
+    clear
+    % Add EEGLAB path
+    addpath('/expanse/projects/nemar/eeglab');
+    addpath('./eeglab');
+    eeglab; close;
 
-%try, parpool(23); end
+    try, parpool(23); end
+end
 
-% folderout = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
-folderout = '.';
+if isTesting
+    folderout = '.';
+else
+    folderout = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
+end
+
 fileNamesClosed = dir(fullfile(folderout, '*_eyesclosed.set'));
 female = readtable('female.csv');
 female = female.Var1;
 male = readtable('male.csv');
 male = male.Var1;
-%N = length(female)*2;
-N = 7;
+if isTesting
+    N = 7;
+else
+    N = length(female)*2;
+end
 % choose training, validation, and test from different subjects.
 N_test_subjs = ceil(N * 0.125);
 N_val_subjs = ceil(N * 0.3125);
@@ -29,16 +39,18 @@ subj_IDs = cell(1,N);
 % (chan x times x samples)
 if isTopo, sample_dim = 4; else, sample_dim = 3; end
 
-for iSubj=1:N 
-%     EEGeyesc = pop_loadset('filepath', folderout, 'filename', fileNamesClosed(iSubj).name);
-    if mod(iSubj,2) == 1
-        % female
-        EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
+parfor iSubj=1:N 
+    if isTesting
+        EEGeyesc = pop_loadset('filepath', folderout, 'filename', fileNamesClosed(iSubj).name);
     else
-        % male
-        EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
+        if mod(iSubj,2) == 1
+            % female
+            EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
+        else
+            % male
+            EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
+        end
     end
-
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
     tmpdata = EEGeyesc.data;
