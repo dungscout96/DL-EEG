@@ -1,19 +1,21 @@
 function load_data_master(winLength, numChan, isSpectral, isTopo)
 % clear
 % Add EEGLAB path
-addpath('/expanse/projects/nemar/eeglab');
-eeglab; close;
+% addpath('/expanse/projects/nemar/eeglab');
+% addpath('./eeglab');
+% eeglab; close;
 
 %try, parpool(23); end
 
-folderout = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
+% folderout = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
+folderout = '.';
 fileNamesClosed = dir(fullfile(folderout, '*_eyesclosed.set'));
 female = readtable('female.csv');
 female = female.Var1;
 male = readtable('male.csv');
 male = male.Var1;
 %N = length(female)*2;
-N = 10;
+N = 7;
 % choose training, validation, and test from different subjects.
 N_test_subjs = ceil(N * 0.125);
 N_val_subjs = ceil(N * 0.3125);
@@ -27,14 +29,15 @@ subj_IDs = cell(1,N);
 % (chan x times x samples)
 if isTopo, sample_dim = 4; else, sample_dim = 3; end
 
-parfor iSubj=1:N 
-    if mod(iSubj,2) == 1
-        % female
-        EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
-    else
-        % male
-        EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
-    end
+for iSubj=1:N 
+    EEGeyesc = pop_loadset('filepath', folderout, 'filename', fileNamesClosed(iSubj).name);
+%     if mod(iSubj,2) == 1
+%         % female
+%         EEGeyesc = pop_loadset('filepath', folderout, 'filename', [female{iSubj} '_eyesclosed.set']);
+%     else
+%         % male
+%         EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
+%     end
 
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
@@ -68,6 +71,21 @@ parfor iSubj=1:N
 
     % If compute spectral
     if isSpectral
+        for epoch=1:size(tmpdata,3)
+            tmpdata(:,:,epoch) = tmpdata(:,:,epoch).*hanning(winLength*EEGeyesc.srate)';
+        end
+        tmpdata = permute(tmpdata,[2,1,3]); % rotate so that time is in column dimension (expected by fft)
+        psd_value = fft(tmpdata); 
+        power_value = abs(psd_value);
+        phase_value = angle(psd_value);
+        % final data is half power, half phase
+        stopIdx = size(power_value,1)/2;
+        tmpdata(1:stopIdx,:,:) = power_value(1:stopIdx,:,:);
+        tmpdata(stopIdx+1:size(tmpdata,1),:,:) = phase_value(1:stopIdx,:,:);
+        tmpdata = permute(tmpdata,[2,1,3]); % re-rotate
+%         abs(xxx)^2
+%         log(abs(xxx)^2)
+    elseif isTopo
         freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
         % compute spectrum
         srates = 128;
@@ -79,36 +97,32 @@ parfor iSubj=1:N
         alpha = mean(XSpecTmp(:, freqRanges(2,1):freqRanges(2,2)), 2);
         beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
 
-        %TODO: modify tmpdata to contains spectral and phase
+        % get grids
+        [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+        [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+        [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+        gridTheta = gridTheta(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
+        gridAlpha = gridAlpha(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
+        gridBeta  = gridBeta( end:-1:1,:); % for proper imaging using figure; imagesc(grid);
 
-        if isTopo
-            % get grids
-            [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-            [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-            [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-            gridTheta = gridTheta(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
-            gridAlpha = gridAlpha(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
-            gridBeta  = gridBeta( end:-1:1,:); % for proper imaging using figure; imagesc(grid);
+        topoTmp = gridTheta;
+        topoTmp(:,:,3) = gridBeta;
+        topoTmp(:,:,2) = gridAlpha;
+        tmpdata = single(topoTmp);
 
-            topoTmp = gridTheta;
-            topoTmp(:,:,3) = gridBeta;
-            topoTmp(:,:,2) = gridAlpha;
-            tmpdata = single(topoTmp);
+        % remove Nan
+        minval = nanmin(nanmin(tmpdata,[],1),[],2);
+        maxval = nanmax(nanmax(tmpdata,[],1),[],2);
 
-            % remove Nan
-            minval = nanmin(nanmin(tmpdata,[],1),[],2);
-            maxval = nanmax(nanmax(tmpdata,[],1),[],2);
-
-            % transform to RGB image
-            tmpdata = bsxfun(@rdivide, bsxfun(@minus, tmpdata, minval), maxval-minval)*255;
-            tmpdata(isnan(tmpdata(:))) = 0;
-        end
+        % transform to RGB image
+        tmpdata = bsxfun(@rdivide, bsxfun(@minus, tmpdata, minval), maxval-minval)*255;
+        tmpdata(isnan(tmpdata(:))) = 0;
     end
 
     % append to XOri
     subj_data{iSubj} = tmpdata;
     subj_gender{iSubj} = repelem(EEGeyesc.gender, size(tmpdata,sample_dim));
-    subj_IDs{iSubj} = repelem(string(EEGeyesc.subjID), size(tmpdata,sample_dim));;
+    subj_IDs{iSubj} = repelem(string(EEGeyesc.subjID), size(tmpdata,sample_dim));
 end
 
 % split into train, val, test
