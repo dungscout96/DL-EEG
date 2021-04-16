@@ -71,20 +71,20 @@ for iSubj=1:N
 
     % If compute spectral
     if isSpectral
+        finalData = zeros(size(tmpdata));
         for epoch=1:size(tmpdata,3)
-            tmpdata(:,:,epoch) = tmpdata(:,:,epoch).*hanning(winLength*EEGeyesc.srate)';
+            nSamples = winLength*EEGeyesc.srate;
+            data = tmpdata(1:numChan,1:nSamples);
+            taperedData = bsxfun(@times, data', hamming(nSamples));
+            fftData = fft(taperedData);
+            stopIdx = nSamples/2;
+            fftData(stopIdx+1:end,:) = [];
+            logPowerData = log(abs(fftData').^2);
+            logPowerZeroedData = bsxfun(@minus, logPowerData, mean(logPowerData')');
+            phaseData    = angle(fftData');
+            finalData(:,:,epoch) = [ logPowerZeroedData phaseData];
         end
-        tmpdata = permute(tmpdata,[2,1,3]); % rotate so that time is in column dimension (expected by fft)
-        psd_value = fft(tmpdata); 
-        power_value = abs(psd_value);
-        phase_value = angle(psd_value);
-        % final data is half power, half phase
-        stopIdx = size(power_value,1)/2;
-        tmpdata(1:stopIdx,:,:) = power_value(1:stopIdx,:,:);
-        tmpdata(stopIdx+1:size(tmpdata,1),:,:) = phase_value(1:stopIdx,:,:);
-        tmpdata = permute(tmpdata,[2,1,3]); % re-rotate
-%         abs(xxx)^2
-%         log(abs(xxx)^2)
+        tmpdata = finalData;
     elseif isTopo
         freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
         % compute spectrum
