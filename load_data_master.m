@@ -4,7 +4,7 @@ isTesting = false;
 if ~isTesting
     % Add EEGLAB path
     addpath('/expanse/projects/nemar/eeglab');
-    addpath('./eeglab');
+    %addpath('./eeglab');
     eeglab; close;
 
     try, parpool(23); end
@@ -52,6 +52,8 @@ parfor iSubj=1:N
             EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
         end
     end
+    disp(EEGeyesc.filename);
+    if ~strcmp(EEGeyesc.filename,'NDAREE675XRY_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARFA860RPD_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARMR277TT7_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARMP784KKE_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARNK241ZXA_eyesclosed.set')
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
     tmpdata = EEGeyesc.data;
@@ -111,9 +113,9 @@ parfor iSubj=1:N
         beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
 
         % get grids
-        [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-        [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-        [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 28, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+        [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+        [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+        [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
         gridTheta = gridTheta(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
         gridAlpha = gridAlpha(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
         gridBeta  = gridBeta( end:-1:1,:); % for proper imaging using figure; imagesc(grid);
@@ -136,6 +138,7 @@ parfor iSubj=1:N
     subj_data{iSubj} = tmpdata;
     subj_gender{iSubj} = repelem(EEGeyesc.gender, size(tmpdata,sample_dim));
     subj_IDs{iSubj} = repelem(string(EEGeyesc.subjID), size(tmpdata,sample_dim));
+    end
 end
 
 % split into train, val, test
@@ -153,11 +156,9 @@ Y_train = cat(2,subj_gender{N_test_subjs + N_val_subjs + 1:end});
 param_text = ['_' num2str(winLength) 's'];
 param_text = [param_text '_' num2str(numChan) 'chan'];
 if isSpectral
-    if isTopo
-        param_text = [param_text '_topo'];
-    else
-        param_text = [param_text '_spectral'];
-    end
+    param_text = [param_text '_spectral'];
+elseif isTopo
+    param_text = [param_text '_topo'];
 else
     param_text = [param_text '_raw'];
 end
