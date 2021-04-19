@@ -1,6 +1,6 @@
 function load_data_master(winLength, numChan, isSpectral, isTopo)
 %clear
-isTesting = true;
+isTesting = false;
 if ~isTesting
     % Add EEGLAB path
     addpath('/expanse/projects/nemar/eeglab');
@@ -52,7 +52,7 @@ for iSubj=1:N
             EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
         end
     end
-    if ~strcmp(EEGeyesc.filename,'NDAREE675XRY_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARFA860RPD_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARMR277TT7_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARMP784KKE_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARNK241ZXA_eyesclosed.set')
+    if ~strcmp(EEGeyesc.filename,'NDAREE675XRY_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARFA860RPD_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARMR277TT7_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARMP784KKE_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARNK241ZXA_eyesclosed.set') && ~strcmp(EEGeyesc.filename,'NDARFB322DRA_eyesclosed.set')
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
     tmpdata = EEGeyesc.data;
@@ -101,6 +101,7 @@ for iSubj=1:N
         tmpdata = finalData;
     elseif isTopo
         tmp_topo = cell(1,size(tmpdata,3));
+	disp(size(tmpdata,3));
         parfor s=1:size(tmpdata,3)
             freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
             % compute spectrum
@@ -112,6 +113,21 @@ for iSubj=1:N
             theta = mean(XSpecTmp(:, freqRanges(1,1):freqRanges(1,2)), 2);
             alpha = mean(XSpecTmp(:, freqRanges(2,1):freqRanges(2,2)), 2);
             beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
+	    disp('theta chan');
+	    size(theta)
+	    disp('alpha chan');
+	    size(alpha)
+	    disp('beta chan');
+	    size(beta)
+	    if sum(theta,'all') == 0
+		error('0 theta');
+	    end
+	    if sum(alpha,'all') == 0
+		error('0 alpha');
+	    end
+	    if sum(beta,'all') == 0
+		error('0 beta');
+	    end
 
             % get grids
             [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
