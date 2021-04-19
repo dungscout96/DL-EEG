@@ -34,6 +34,7 @@ N_train_subjs = N - N_test_subjs - N_val_subjs;
 
 subj_data = cell(1,N);
 subj_gender = cell(1,N);
+subj_ages = cell(1,N);
 subj_IDs = cell(1,N);
 
 % dimension of number of sample in the data. If topo map, 4 (rgb x samples), otherwise 3
@@ -157,6 +158,7 @@ for iSubj=1:N
     % append to XOri
     subj_data{iSubj} = tmpdata;
     subj_gender{iSubj} = repelem(EEGeyesc.gender, size(tmpdata,sample_dim));
+    subj_ages{iSubj} = repelem(EEGeyesc.age, size(tmpdata,sample_dim));
     subj_IDs{iSubj} = repelem(string(EEGeyesc.subjID), size(tmpdata,sample_dim));
     end
 end
@@ -167,6 +169,8 @@ disp(size(X_test));
 Y_test = cat(2,subj_gender{1:N_test_subjs});
 disp(size(Y_test));
 test_subjID = cat(2,subj_IDs{1:N_test_subjs});
+subjID = cat(2,subj_IDs{:});
+subj_ages = cat(2,subj_ages{:});
 X_val = cat(sample_dim,subj_data{N_test_subjs+1:N_test_subjs + N_val_subjs});
 Y_val = cat(2,subj_gender{N_test_subjs+1:N_test_subjs + N_val_subjs});
 X_train = cat(sample_dim,subj_data{N_test_subjs + N_val_subjs + 1:end});
@@ -189,4 +193,6 @@ save(['child_mind_y_val' param_text '.mat'],'Y_val','-v7.3');
 save(['child_mind_x_test' param_text '.mat'],'X_test','-v7.3');
 save(['child_mind_y_test' param_text '.mat'],'Y_test','-v7.3');
 save('test_subj.mat','test_subjID','-v7.3');
+save('subj_ages.mat','subj_ages','-v7.3');
+save('subj_IDs.mat','subjID','-v7.3');
 
