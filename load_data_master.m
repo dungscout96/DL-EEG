@@ -1,6 +1,6 @@
 function load_data_master(winLength, numChan, isSpectral, isTopo)
 %clear
-isTesting = false;
+isTesting = true;
 if ~isTesting
     % Add EEGLAB path
     addpath('/expanse/projects/nemar/eeglab');
@@ -40,7 +40,7 @@ subj_IDs = cell(1,N);
 % (chan x times x samples)
 if isTopo, sample_dim = 4; else, sample_dim = 3; end
 
-parfor iSubj=1:N 
+for iSubj=1:N 
     if isTesting
         EEGeyesc = pop_loadset('filepath', folderout, 'filename', fileNamesClosed(iSubj).name);
     else
@@ -52,7 +52,6 @@ parfor iSubj=1:N
             EEGeyesc = pop_loadset('filepath', folderout, 'filename', [male{iSubj/2} '_eyesclosed.set']);
         end
     end
-    disp(EEGeyesc.filename);
     if ~strcmp(EEGeyesc.filename,'NDAREE675XRY_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARFA860RPD_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARMR277TT7_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARMP784KKE_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARNK241ZXA_eyesclosed.set')
     % sub-sample using window length
     EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', winLength, 'limits', [0 winLength]);
@@ -101,37 +100,43 @@ parfor iSubj=1:N
         end
         tmpdata = finalData;
     elseif isTopo
-        freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
-        % compute spectrum
-        srates = 128;
-        [XSpecTmp,~] = spectopo(tmpdata, winLength*srates, srates, 'plot', 'off', 'overlap', 50);
-        XSpecTmp(:,1) = []; % remove frequency 0
+        tmp_topo = cell(1,size(tmpdata,3));
+        parfor s=1:size(tmpdata,3)
+            freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
+            % compute spectrum
+            srates = 128;
+            [XSpecTmp,~] = spectopo(tmpdata(:,:,s), winLength*srates, srates, 'plot', 'off', 'overlap', 50);
+            XSpecTmp(:,1) = []; % remove frequency 0
 
-        % get frequency bands
-        theta = mean(XSpecTmp(:, freqRanges(1,1):freqRanges(1,2)), 2);
-        alpha = mean(XSpecTmp(:, freqRanges(2,1):freqRanges(2,2)), 2);
-        beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
+            % get frequency bands
+            theta = mean(XSpecTmp(:, freqRanges(1,1):freqRanges(1,2)), 2);
+            alpha = mean(XSpecTmp(:, freqRanges(2,1):freqRanges(2,2)), 2);
+            beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
 
-        % get grids
-        [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-        [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-        [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
-        gridTheta = gridTheta(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
-        gridAlpha = gridAlpha(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
-        gridBeta  = gridBeta( end:-1:1,:); % for proper imaging using figure; imagesc(grid);
+            % get grids
+            [~, gridTheta] = topoplot( theta, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+            [~, gridAlpha] = topoplot( alpha, chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+            [~, gridBeta ] = topoplot( beta , chanlocs, 'verbose', 'off', 'gridscale', 24, 'noplot', 'on', 'chaninfo', EEGeyesc(1).chaninfo);
+            gridTheta = gridTheta(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
+            gridAlpha = gridAlpha(end:-1:1,:); % for proper imaging using figure; imagesc(grid);
+            gridBeta  = gridBeta( end:-1:1,:); % for proper imaging using figure; imagesc(grid);
 
-        topoTmp = gridTheta;
-        topoTmp(:,:,3) = gridBeta;
-        topoTmp(:,:,2) = gridAlpha;
-        tmpdata = single(topoTmp);
+            topoTmp = gridTheta;
+            topoTmp(:,:,3) = gridBeta;
+            topoTmp(:,:,2) = gridAlpha;
+            topoTmp = single(topoTmp);
 
-        % remove Nan
-        minval = nanmin(nanmin(tmpdata,[],1),[],2);
-        maxval = nanmax(nanmax(tmpdata,[],1),[],2);
+            % remove Nan
+            minval = nanmin(nanmin(topoTmp,[],1),[],2);
+            maxval = nanmax(nanmax(topoTmp,[],1),[],2);
 
-        % transform to RGB image
-        tmpdata = bsxfun(@rdivide, bsxfun(@minus, tmpdata, minval), maxval-minval)*255;
-        tmpdata(isnan(tmpdata(:))) = 0;
+            % transform to RGB image
+            topoTmp = bsxfun(@rdivide, bsxfun(@minus, topoTmp, minval), maxval-minval)*255;
+            topoTmp(isnan(topoTmp(:))) = 0;
+            tmp_topo{s} = topoTmp;
+        end
+        tmpdata = cat(4,tmp_topo{:});
+>>>>>>> 7fadf8a5d3fc3a32151bc5d96fd3e911a7df7a30
     end
 
     % append to XOri
