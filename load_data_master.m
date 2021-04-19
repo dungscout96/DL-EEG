@@ -136,7 +136,6 @@ for iSubj=1:N
             tmp_topo{s} = topoTmp;
         end
         tmpdata = cat(4,tmp_topo{:});
->>>>>>> 7fadf8a5d3fc3a32151bc5d96fd3e911a7df7a30
     end
 
     % append to XOri
