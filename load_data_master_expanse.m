@@ -119,12 +119,12 @@ parfor iSubj=1:N
                 theta = mean(XSpecTmp(:, freqRanges(1,1):freqRanges(1,2)), 2);
                 alpha = mean(XSpecTmp(:, freqRanges(2,1):freqRanges(2,2)), 2);
                 beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
-                disp('theta chan');
-                size(theta)
-                disp('alpha chan');
-                size(alpha)
-                disp('beta chan');
-                size(beta)
+%                 disp('theta chan');
+%                 size(theta)
+%                 disp('alpha chan');
+%                 size(alpha)
+%                 disp('beta chan');
+%                 size(beta)
                 if sum(theta,'all') == 0
                     error('0 theta');
                 end
