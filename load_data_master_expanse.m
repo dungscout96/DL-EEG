@@ -108,7 +108,7 @@ parfor iSubj=1:N
         elseif opt.istopo
             tmp_topo = cell(1,size(tmpdata,3));
             disp(size(tmpdata,3));
-            parfor s=1:size(tmpdata,3)
+            for s=1:size(tmpdata,3)
                 freqRanges = [4 7; 7 13; 14 25]; % frequencies, but also indices
                 % compute spectrum
                 srates = 128;
