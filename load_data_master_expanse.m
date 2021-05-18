@@ -26,8 +26,8 @@ if length(unique(varValues)) ~= 2
     error('Can only process binary variables');
 end
 
-var1 = info.EID(varValues == 0);
-var2 = info.EID(varValues == 1);
+var1 = info.EID(varValues == 0); % male
+var2 = info.EID(varValues == 1); % female
 if length(var1) > length(var2)
     N = length(var2)*2;
 else
@@ -49,12 +49,12 @@ subj_IDs    = cell(1,N);
 if opt.istopo, sample_dim = 4; else, sample_dim = 3; end
 
 parfor iSubj=1:N
-    varVal = mod(iSubj,2);
+    varVal = mod(iSubj,2); % assumption is varVal is binary
     if varVal == 1
-        % var2 (male=1 when Sex is choosen)
+        % var2 (female=1 when Sex is choosen)
         EEGeyesc = pop_loadset('filepath', opt.folder, 'filename', [var2{floor(iSubj/2)+1} '_eyesclosed.set']);
     else
-        % var1 (female=0)
+        % var1 (male=0)
         EEGeyesc = pop_loadset('filepath', opt.folder, 'filename', [var1{iSubj/2} '_eyesclosed.set']);
     end
     if ~strcmp(EEGeyesc.filename,'NDAREE675XRY_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARFA860RPD_eyesclosed.set') &&~strcmp(EEGeyesc.filename,'NDARMR277TT7_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARMP784KKE_eyesclosed.set')&&~strcmp(EEGeyesc.filename,'NDARNK241ZXA_eyesclosed.set') && ~strcmp(EEGeyesc.filename,'NDARFB322DRA_eyesclosed.set')
@@ -163,6 +163,7 @@ parfor iSubj=1:N
         % append to XOri
         subj_data{iSubj} = tmpdata;
         subj_vval{iSubj} = repelem(varVal, size(tmpdata,sample_dim));
+        subj_IDs{iSubj} = repelem(EEGeyesc.subjID, size(tmpdata,sample_dim));
     end
 end
 
