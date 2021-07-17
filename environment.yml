@@ -19,5 +19,4 @@ dependencies:
   - graphviz
   - nltk
   - python-graphviz
-  - cvxpy
 prefix: /home/dtyoung/.conda/envs/ml
