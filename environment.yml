@@ -1,0 +1,22 @@
+name: ml
+channels:
+  - defaults
+dependencies:
+  - jupyter
+  - python=3.7
+  - torchvision
+  - pytorch=1.8.0
+  - h5py
+  - matplotlib
+  - conda-build
+  - tensorboard
+  - joblib
+  - scikit-learn
+  - torchtext=0.9
+  - spacy
+  - stanza
+  - opt_einsum
+  - graphviz
+  - nltk
+  - python-graphviz
+prefix: /home/dtyoung/.conda/envs/ml
