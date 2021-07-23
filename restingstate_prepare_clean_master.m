@@ -17,6 +17,10 @@ info = info(2:end,:);
 
 issueFlag = cell(1, length(folders));
 count = 1;
+
+subj_data   = cell(1,N);
+subj_vval = cell(1,N);
+
 parfor iFold = 1:length(folders)
     fileName = fullfile(folders(iFold).folder, folders(iFold).name, 'EEG/raw/mat_format/RestingState.mat');
     fileNameClosedSet = fullfile(folderout, [ folders(iFold).name '_eyesclosed.set' ]);
@@ -59,7 +63,7 @@ parfor iFold = 1:length(folders)
                 EEG = pop_chanedit(EEG, 'load',{'GSN_HydroCel_129.sfp','filetype','autodetect'});
                 EEG = pop_chanedit(EEG, 'setref',{'1:129','Cz'});
                 EEG = pop_rmbase(EEG, []);
-                EEG = pop_eegfiltnew(EEG, 'locutoff',0.01,'hicutoff',64);
+                EEG = pop_eegfiltnew(EEG, 'locutoff',0.01,'hicutoff',64); % Wouldn't this leave linear trend and 
                 EEG = pop_resample(EEG, 125);
                 EEG = eeg_checkset( EEG );
                 EEG = pop_reref( EEG, [57 100], 'keepref', 'on' );
@@ -88,6 +92,9 @@ parfor iFold = 1:length(folders)
                 end
                 pop_saveset(EEGeyesc, 'filename', fileNameClosedSet, 'savemode', 'onefile');
                 
+                % add to data matrix
+                subj_data{iFold} = EEGeyesc.data;
+                subj_vval{iFold} = repelem(EEG.subjID, size(tmpdata,sample_dim));
             else
                 issueFlag{iFold} = 'Not 129 channels';
             end
@@ -100,3 +107,15 @@ end
 indIssue = find(~cellfun(@isempty, issueFlag));
 fprintf('Issues at indices (empty means no issues): %s\n', int2str(indIssue));
 if ~isempty(indIssue), issueFlag(indIssue)', end
+
+% save matrix
+X = cat(sample_dim,subj_data{:});
+Y = cat(         2,subj_vval{:});
+
+param_text = '_2s';
+param_text = [param_text '_128chan'];
+param_text = [param_text '_raw'];
+
+save(['child_mind_data' param_text '.mat'],'X','-v7.3');
+save(['child_mind_subjIDs' param_text '.mat'],'Y','-v7.3');
+clear % clearing var is always good
