@@ -16,28 +16,27 @@ info = loadtxt('HBN_all_Pheno.csv', 'delim', ',', 'verbose', 'off');
 info = info(2:end,:);
 
 issueFlag = cell(1, length(folders));
-count = 1;
-
+N = length(folders);
 subj_data   = cell(1,N);
 subj_vval = cell(1,N);
 
-parfor iFold = 1:length(folders)
+for iFold = 1:N
     fileName = fullfile(folders(iFold).folder, folders(iFold).name, 'EEG/raw/mat_format/RestingState.mat');
     fileNameClosedSet = fullfile(folderout, [ folders(iFold).name '_eyesclosed.set' ]);
     fileNameOpenSet   = fullfile(folderout, [ folders(iFold).name '_eyesopen.set' ]);
     
-    if exist(fileNameClosedSet, 'file')
-	disp([fileNameClosedSet ' exists. Skipped']);
-	continue;
+    %if exist(fileNameClosedSet, 'file')
+	%disp([fileNameClosedSet ' exists. Skipped']);
+	%continue;
         %delete(fileNameClosedSet);
         %delete(fileNameClosedFdt);
-    end
-    if exist(fileNameOpenSet, 'file')
-	disp([fileNameClosedSet ' exists. Skipped']);
-	continue;
+    %end
+    %if exist(fileNameOpenSet, 'file')
+	%disp([fileNameClosedSet ' exists. Skipped']);
+	%continue;
         %delete(fileNameOpenSet);
         %delete(fileNameOpenFdt);
-    end
+    %end
     infoRow = strmatch(folders(iFold).name, info(:,1)', 'exact');
     if exist(fileName, 'file') && length(infoRow) > 0
         try
@@ -94,7 +93,7 @@ parfor iFold = 1:length(folders)
                 
                 % add to data matrix
                 subj_data{iFold} = EEGeyesc.data;
-                subj_vval{iFold} = repelem(EEG.subjID, size(tmpdata,sample_dim));
+                subj_vval{iFold} = repelem({EEG.subjID}, size(EEGeyesc.data,3));
             else
                 issueFlag{iFold} = 'Not 129 channels';
             end
@@ -109,8 +108,8 @@ fprintf('Issues at indices (empty means no issues): %s\n', int2str(indIssue));
 if ~isempty(indIssue), issueFlag(indIssue)', end
 
 % save matrix
-X = cat(sample_dim,subj_data{:});
-Y = cat(         2,subj_vval{:});
+X = cat(3,subj_data{:});
+Y = cat(2,subj_vval(:));
 
 param_text = '_2s';
 param_text = [param_text '_128chan'];
