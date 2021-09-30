@@ -10,30 +10,35 @@ folderout = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
 folders = dir(folderin);
 fprintf('length %f', length(folders));
 
+% Prepare data
+fileTrain = dir(fullfile(folderout, '*.set'));
 % read the CSV file
 disp('Loading info file...');
 info = loadtxt('HBN_all_Pheno.csv', 'delim', ',', 'verbose', 'off');
 info = info(2:end,:);
 
+XTrain = cell(1,length(folders));
+YTrain = cell(1,length(folders));
 issueFlag = cell(1, length(folders));
 count = 1;
 parfor iFold = 1:length(folders)
+    %for iFold = 1:6 %length(folders)
+    
     fileName = fullfile(folders(iFold).folder, folders(iFold).name, 'EEG/raw/mat_format/RestingState.mat');
     fileNameClosedSet = fullfile(folderout, [ folders(iFold).name '_eyesclosed.set' ]);
-    fileNameOpenSet   = fullfile(folderout, [ folders(iFold).name '_eyesopen.set' ]);
-    
+    fileNameClosedFdt = fullfile(folderout, [ folders(iFold).name '_eyesclosed.fdt' ]);
+%     fileNameOpenSet   = fullfile(folderout, [ folders(iFold).name '_eyesopen.set' ]);
+%     fileNameOpenFdt   = fullfile(folderout, [ folders(iFold).name '_eyesopen.fdt' ]);
     if exist(fileNameClosedSet, 'file')
 	disp([fileNameClosedSet ' exists. Skipped']);
 	continue;
         %delete(fileNameClosedSet);
         %delete(fileNameClosedFdt);
     end
-    if exist(fileNameOpenSet, 'file')
-	disp([fileNameClosedSet ' exists. Skipped']);
-	continue;
+    %if exist(fileNameOpenSet, 'file')
         %delete(fileNameOpenSet);
         %delete(fileNameOpenFdt);
-    end
+    %end
     infoRow = strmatch(folders(iFold).name, info(:,1)', 'exact');
     if exist(fileName, 'file') && length(infoRow) > 0
         try
@@ -57,37 +62,28 @@ parfor iFold = 1:length(folders)
                 % pop_chancoresp(chanlocs, EEG.chanlocs)
                 % plugin to do EOG-regression based 
                 EEG = pop_chanedit(EEG, 'load',{'GSN_HydroCel_129.sfp','filetype','autodetect'});
-                EEG = pop_chanedit(EEG, 'setref',{'1:129','Cz'});
+                EEG = pop_select(EEG, 'nochannel', 129);
                 EEG = pop_rmbase(EEG, []);
-                EEG = pop_eegfiltnew(EEG, 'locutoff',0.5,'hicutoff',55);
-                EEG = pop_resample(EEG, 125);
-                EEG = eeg_checkset( EEG );
-                EEG = pop_reref( EEG, [57 100], 'keepref', 'on' );
-                EEG2 = pop_clean_rawdata(EEG, 'FlatlineCriterion',5,'ChannelCriterion',0.7,'LineNoiseCriterion',4,'Highpass','off','BurstCriterion','off','WindowCriterion','off','BurstRejection','off','Distance','Euclidian');
-                EEG = pop_interp(EEG2, EEG.chanlocs);
+                EEG = pop_eegfiltnew(EEG, 'locutoff',0.25,'hicutoff',25);
+                EEG = pop_resample(EEG, 128);
+                % add Cz back and re-reference
+                EEG = pop_chanedit(EEG, 'append',131,'changefield',{132,'labels','Cz'},'changefield',{132,'theta','0'},'changefield',{132,'radius','0'},'changefield',{132,'X','5.2047e-15'},'changefield',{132,'Y','0'},'changefield',{132,'Z','85'},'changefield',{132,'sph_theta','0'},'changefield',{132,'sph_phi','90'},'changefield',{132,'sph_radius','85'},'setref',{'1:131','Cz'});
+                EEG = eeg_checkset( EEG );EEG = pop_reref( EEG, [],'refloc',struct('labels',{'Cz'},'Y',{0},'X',{5.2047e-15},'Z',{85},'sph_theta',{0},'sph_phi',{90},'sph_radius',{85},'theta',{0},'radius',{0},'type',{''},'ref',{''},'urchan',{[]},'datachan',{0}));
+                EEG = pop_reref( EEG, [57 100] );
+
                 
 %                 % resting state: instruction. Open 20 close 40 20 - 40
 %                 % wait 2.5 seconds. 
-                EEGeyeso = pop_epoch( EEG, {  '20  ' }, [3  17], 'newname', 'Eyes open', 'epochinfo', 'yes');
-                EEGeyeso.eyesclosed = 0;
-                EEGeyeso = eeg_epoch2continuous(EEGeyeso);
-                EEGeyeso.event = []; % removing boundary events
-                EEGeyeso = eeg_regepochs( EEGeyeso, 'recurrence', 2, 'limits', [0 2]);
-                if EEGeyeso.trials ~= 35
-                    error('Missing eyes-opened segment')
-                end
-                pop_saveset(EEGeyeso, 'filename', fileNameOpenSet, 'savemode', 'onefile');
-                
+%                 EEGeyeso = pop_epoch( NEWEEG, {  '20  ' }, [4  19], 'newname', 'Eyes open', 'epochinfo', 'yes');
+%                 EEGeyeso.eyesclosed = 0;
+%                 pop_saveset(EEGeyeso, fileNameOpenSet);
                 EEGeyesc = pop_epoch( EEG, {  '30  ' }, [3  37], 'newname', 'Eyes closed', 'epochinfo', 'yes');
                 EEGeyesc.eyesclosed = 1;
                 EEGeyesc = eeg_epoch2continuous(EEGeyesc);
-                EEGeyesc.event = []; % removing boundary events
-                EEGeyesc = eeg_regepochs( EEGeyesc, 'recurrence', 2, 'limits', [0 2]);
-                if EEGeyesc.trials ~= 85
-                    error('Missing eyes-closed segment')
-                end
-                pop_saveset(EEGeyesc, 'filename', fileNameClosedSet, 'savemode', 'onefile');
-                
+                EEGeyesc2 = pop_clean_rawdata(EEGeyesc, 'FlatlineCriterion',5,'ChannelCriterion',0.7,'LineNoiseCriterion',4,'Highpass','off','BurstCriterion','off','WindowCriterion','off','BurstRejection','off','Distance','Euclidian');
+                EEGeyesc2 = pop_interp(EEGeyesc2, EEGeyesc.chanlocs);
+                pop_saveset(EEGeyesc2, fileNameClosedSet);
+  
             else
                 issueFlag{iFold} = 'Not 129 channels';
             end
