@@ -274,6 +274,15 @@ def create_original_model(feature):
     return model
 
 def check_accuracy(loader, model, device, dtype, logger):
+    '''
+    Check accuracy of the model 
+    param:
+        loader: An EEGDataset object
+        model: A PyTorch Module to test
+        device: cpu or cuda
+        dtype: value type
+        logger: Logger object for logging purpose
+    '''
     if loader.dataset.train:
         logger.log('Checking accuracy on training set')
     elif loader.dataset.val:
@@ -303,7 +312,7 @@ def train(model, optimizer, epochs, logger):
     - model: A PyTorch Module giving the model to train.
     - optimizer: An Optimizer object we will use to train the model
     - epochs: (Optional) A Python integer giving the number of epochs to train for
-    
+    - logger: Logger object for logging purpose
     Returns: Nothing, but prints model accuracies during training.
     """
     model = model.to(device=device)  # move the model parameters to CPU/GPU
@@ -348,6 +357,31 @@ def train(model, optimizer, epochs, logger):
     logger.save_model(model,f"epoch{e}")
     return model
 
+def run_experiment(seed, model_name, feature, num_epoch, logger):
+    model = create_model()
+    logger.set_model_save_location(f'{model_name}-{feature}')
+    experiment = f'{model_name}-{feature}-seed{seed}'
+    logger.set_experiment(experiment)
+
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    # toggle between learning rate and batch size values 
+
+    optimizer = torch.optim.Adamax(model.parameters(), lr=0.002, weight_decay=0.001)
+    model = train(model, optimizer, epochs=num_epoch)
+    
+    # Testing
+    logger.log('Testing on balanced test set')
+    test_data_balanced = load_data(path, 'test', winLength, numChan, srate, feature,'v2')
+    sample_acc1, subject_acc1 = test_model(model, test_data_balanced, path + 'test_subjIDs.csv')
+
+    logger.log('Testing on all-male test set')
+    test_data_all_male = load_data(path, 'test', winLength, numChan, srate, feature,'v3')
+    sample_acc2, subject_acc2 = test_model(model, test_data_all_male, path + 'test_subjIDs_more_test.csv')
+    
+    return model
+
 def test_model(model, test_data, subj_csv, device, dtype, logger):
     # one-segment test
     logger.log('Testing model accuracy using 1-segment metric')
@@ -385,31 +419,6 @@ def test_model(model, test_data, subj_csv, device, dtype, logger):
     return per_sample_acc, acc
 
 
-def run_experiment(seed, model_name, feature, num_epoch, logger):
-    model = create_model()
-    logger.set_model_save_location(f'{model_name}-{feature}')
-    experiment = f'{model_name}-{feature}-seed{seed}'
-    logger.set_experiment(experiment)
-
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-
-    # toggle between learning rate and batch size values 
-
-    optimizer = torch.optim.Adamax(model.parameters(), lr=0.002, weight_decay=0.001)
-    model = train(model, optimizer, epochs=num_epoch)
-    
-    # Testing
-    logger.log('Testing on balanced test set')
-    test_data_balanced = load_data(path, 'test', winLength, numChan, srate, feature,'v2')
-    sample_acc1, subject_acc1 = test_model(model, test_data_balanced, path + 'test_subjIDs.csv')
-
-    logger.log('Testing on all-male test set')
-    test_data_all_male = load_data(path, 'test', winLength, numChan, srate, feature,'v3')
-    sample_acc2, subject_acc2 = test_model(model, test_data_all_male, path + 'test_subjIDs_more_test.csv')
-    
-    return model
-
 def test_all_seeds(model_path, model_type, feature, test_data, subjIDs_file, epoch, num_seed, device, dtype, logger):
     sample_acc = []
     subject_acc = []
@@ -425,30 +434,5 @@ def test_all_seeds(model_path, model_type, feature, test_data, subjIDs_file, epo
     subject_acc = np.multiply(subject_acc,100)
     return sample_acc, subject_acc
 
-'''
-def test_all_seeds(model_name, epoch,isBalanced, logger):
-    if isBalanced:
-        logger.log('Testing on balanced test set')
-        test_data = load_data(path, 'test', winLength, numChan, srate, feature,'v2')
-        subjIDs_file = 'data/test_subjIDs_fewer_subjects.csv'
-    else:
-        logger.log('Testing on all male test set')
-        test_data = load_data(path, 'test', winLength, numChan, srate, feature,'v3')
-        subjIDs_file = 'data/test_subjIDs_more_test.csv'
-
-    sample_acc = []
-    subject_acc = []
-    for s in range(10):
-        model = create_model()
-        model.load_state_dict(torch.load(f'saved-model/{model_name}-seed{s}-epoch{epoch}'))
-        model.to(device=device)
-        sam_acc, sub_acc = test_model(model, test_data,subjIDs_file)
-        sample_acc.append(sam_acc)
-        subject_acc.append(sub_acc)
-        
-    sample_acc = np.multiply(sample_acc,100)
-    subject_acc = np.multiply(subject_acc,100)
-    return sample_acc, subject_acc
-'''
 def get_stats(arr):
     return np.min(arr), np.max(arr), np.mean(arr), np.std(arr)

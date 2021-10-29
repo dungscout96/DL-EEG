@@ -1,11 +1,11 @@
 % Functions should be re-entrant (use no hard coded info). This code is better as a script.
 
-opt.infofile = 'HBN_all_Pheno2.csv';
-opt.folder   = 'data';
+opt.infofile = 'HBN_NEMAR_Pheno.csv';
+opt.folder   = '/expanse/projects/nemar/child-mind-restingstate-preprocessed';
 
 if ~exist('opt', 'var'), opt = []; end
 if ~isfield(opt, 'winlength'),  opt.winlength = 2; end
-if ~isfield(opt, 'numchan'),    opt.numchan    = 2; end
+if ~isfield(opt, 'numchan'),    opt.numchan    = 24; end
 if ~isfield(opt, 'isspectral'), opt.isspectral = false; end
 if ~isfield(opt, 'istopo'),     opt.istopo     = false; end
 if ~isfield(opt, 'folder'),     opt.folder      = '.'; end
@@ -13,7 +13,11 @@ if ~isfield(opt, 'variable'),   opt.variable   = 'Sex'; end
 if ~isfield(opt, 'infofile'),   opt.infofile   = 'HBN_all_Pheno.csv'; end % make a test file with a few subjects for testing
 
 if ~exist('pop_loadset.m', 'file')
-    error('You must add EEGLAB to your path before calling this function');
+    warning('You must add EEGLAB to your path before calling this script');
+    fprintf('Using EEGLAB on Expanse...');
+    addpath('/expanse/projects/nemar/eeglab');
+    eeglab; close;
+    try, parpool; end
 end
 
 info = readtable(opt.infofile);
@@ -44,7 +48,7 @@ subj_IDs    = cell(1,N);
 % (chan x times x samples)
 if opt.istopo, sample_dim = 4; else, sample_dim = 3; end
 
-for iSubj=1:N
+parfor iSubj=1:N
     varVal = mod(iSubj,2);
     if varVal == 1
         % var2 (male=1 when Sex is choosen)
@@ -104,8 +108,8 @@ for iSubj=1:N
         elseif opt.istopo
             tmp_topo = cell(1,size(tmpdata,3));
             disp(size(tmpdata,3));
-            parfor s=1:size(tmpdata,3)
-                freqRanges = [4 7; 7 13; 14 30]; % frequencies, but also indices
+            for s=1:size(tmpdata,3)
+                freqRanges = [4 7; 7 13; 14 25]; % frequencies, but also indices
                 % compute spectrum
                 srates = 128;
                 [XSpecTmp,~] = spectopo(tmpdata(:,:,s), opt.winlength*srates, srates, 'plot', 'off', 'overlap', 50);
@@ -115,12 +119,12 @@ for iSubj=1:N
                 theta = mean(XSpecTmp(:, freqRanges(1,1):freqRanges(1,2)), 2);
                 alpha = mean(XSpecTmp(:, freqRanges(2,1):freqRanges(2,2)), 2);
                 beta  = mean(XSpecTmp(:, freqRanges(3,1):freqRanges(3,2)), 2);
-                disp('theta chan');
-                size(theta)
-                disp('alpha chan');
-                size(alpha)
-                disp('beta chan');
-                size(beta)
+%                 disp('theta chan');
+%                 size(theta)
+%                 disp('alpha chan');
+%                 size(alpha)
+%                 disp('beta chan');
+%                 size(beta)
                 if sum(theta,'all') == 0
                     error('0 theta');
                 end
