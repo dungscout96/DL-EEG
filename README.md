@@ -12,3 +12,4 @@
 - `SexPrediction-Original-Topo.ipynb`: Notebook to train referenced work model on spectral data (S-SCNN)
 - `SexPrediction-VGG-Raw.ipynb`: Notebook for training repurposed VGG-16 model on raw data (R-VGG)
 - `SexPrediction-VGG-Topo.ipynb`: Notebook for training repurposed VGG-16 model on spectral data (S-VGG)
+- `utils.py`: supporting classes and functions for the Jupyter notebooks
