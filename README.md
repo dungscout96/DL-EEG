@@ -1,6 +1,6 @@
 # Github repo supporting paper
 ### Deep Convolutional Neural Network Applied to Electroencephalography: Raw Data vs Spectral Features
-(On arXiv: https://arxiv.org/abs/2105.04762)
+(Published paper: https://ieeexplore.ieee.org/document/9630708)
 
 ## Code layout
 - `environment.yml`: conda environment set up
